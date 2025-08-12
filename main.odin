@@ -1,8 +1,8 @@
 package main
 import "core:fmt"
+import "core:math/rand"
 import "core:strings"
 import rl "vendor:raylib"
-import "core:math/rand"
 
 GRAVITY :: 10000
 BOTTOM :: 400
@@ -29,7 +29,7 @@ Particle :: struct {
 	ra:               u8,
 	rb:               u8,
 	color:            rl.Color,
-  flow_direction: i32
+	flow_direction:   i32,
 }
 
 selected_particle := 1
@@ -57,8 +57,8 @@ initalize_world :: proc() {
 }
 
 main :: proc() {
-	initalize_world() // Don't forget to call this!
-	
+	initalize_world()
+
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "particles")
 	for !rl.WindowShouldClose() {
 		rl.SetTargetFPS(144)
@@ -76,19 +76,18 @@ main :: proc() {
 		if rl.IsMouseButtonDown(.LEFT) {
 			switch selected_particle {
 			case 1:
-				place_sand()
+				place_particle(Particle{type = .SAND, color = rl.BEIGE})
 			case 2:
-				place_water()
+				place_particle(Particle{type = .WATER, color = rl.BLUE})
 			}
 		}
-		
-		// Reset update flags
+
 		for y in 0 ..< WORLD_HEIGHT {
 			for x in 0 ..< WORLD_WIDTH {
 				world.cells[y][x].has_been_updated = false
 			}
 		}
-		
+
 		render_particles()
 		apply_gravity()
 
@@ -105,10 +104,30 @@ get_mouse_pos :: proc() -> (x, y: i32) {
 	return
 }
 
+
+//TODO: write generic function to just place any type of particle 
+//
+
+place_particle :: proc(particle: Particle) {
+	x, y := get_mouse_pos()
+
+	if !is_in_bounds(x, y) do return
+
+	// place like 10 at a time in like a squareish circle 
+	for i: i32 = 0; i < 10; i += 1 {
+		for j: i32 = 0; j < 10; j += 1 {
+			world.cells[y + j][x + i] = particle
+		}
+
+	}
+
+
+}
+
 place_sand :: proc() {
 	x, y := get_mouse_pos()
 	if !is_in_bounds(x, y) do return
-	
+
 	particle := Particle {
 		type             = .SAND,
 		color            = rl.BEIGE,
@@ -120,12 +139,12 @@ place_sand :: proc() {
 place_water :: proc() {
 	x, y := get_mouse_pos()
 	if !is_in_bounds(x, y) do return
-	
+
 	particle := Particle {
 		type             = .WATER,
 		color            = rl.BLUE,
 		has_been_updated = false,
-		flow_direction = rand.choice([]i32{-1, 1})
+		flow_direction   = rand.choice([]i32{-1, 1}),
 	}
 	world.cells[y][x] = particle
 }
@@ -162,7 +181,6 @@ apply_gravity :: proc() {
 	}
 }
 
-// Fixed bounds checking
 is_in_bounds :: proc(x, y: i32) -> bool {
 	return x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT
 }
@@ -172,11 +190,14 @@ move_particles :: proc(x, y: i32) {
 
 	particle := world.cells[y][x]
 	if particle.type == .EMPTY do return
-  if particle.has_been_updated == true do return 
+	if particle.has_been_updated == true do return
 
-	// Try to move down first (both sand and water fall)
+	// Try to move down first
 	if is_in_bounds(x, y + 1) && world.cells[y + 1][x].type == .EMPTY {
-		world.cells[y][x] = Particle{type = .EMPTY, color = rl.BLACK}
+		world.cells[y][x] = Particle {
+			type  = .EMPTY,
+			color = rl.BLACK,
+		}
 		world.cells[y + 1][x] = particle
 		world.cells[y + 1][x].has_been_updated = true
 		return
@@ -184,52 +205,72 @@ move_particles :: proc(x, y: i32) {
 
 
 	if is_in_bounds(x - 1, y + 1) && world.cells[y + 1][x - 1].type == .EMPTY {
-		world.cells[y][x] = Particle{type = .EMPTY, color = rl.BLACK}
+		world.cells[y][x] = Particle {
+			type  = .EMPTY,
+			color = rl.BLACK,
+		}
 		world.cells[y + 1][x - 1] = particle
 		world.cells[y + 1][x - 1].has_been_updated = true
 		return
 	}
 
 	if is_in_bounds(x + 1, y + 1) && world.cells[y + 1][x + 1].type == .EMPTY {
-		world.cells[y][x] = Particle{type = .EMPTY, color = rl.BLACK}
+		world.cells[y][x] = Particle {
+			type  = .EMPTY,
+			color = rl.BLACK,
+		}
 		world.cells[y + 1][x + 1] = particle
 		world.cells[y + 1][x + 1].has_been_updated = true
 		return
 	}
 
-	//Water-specific horizontal movement (only after trying to fall AND nothing above)
 	if particle.type == .WATER {
-	
-		
-			// Randomly choose left or right first to avoid bias
-//			directions := [2]i32{-1, 1}
-//			if (x + y) % 2 == 0 {
-//				directions = {1, -1} // Mix it up based on position
-//			}
-//			
-//			for direction in directions {
-//				new_x := x + direction
-//				if is_in_bounds(new_x, y) && world.cells[y][new_x].type == .EMPTY {
-//					world.cells[y][x] = Particle{type = .EMPTY, color = rl.BLACK}
-//					world.cells[y][new_x] = particle
-//					world.cells[y][new_x].has_been_updated = true
-//					return
-//				}
-//			}
-//	}
-    spread_rate := 5
 
-    //TODO: the water needs to fall down if there is nothing next to it
-    //TODO: the flow direction isnt working, need to think of another way of handling this
-    
-    if is_in_bounds(x - particle.flow_direction,y) && world.cells[y][x - particle.flow_direction].type == .EMPTY { 
-      world.cells[y][x] =  Particle{type = .EMPTY, color = rl.BLACK}
-      world.cells[y][x - particle.flow_direction] = particle 
-      world.cells[y][x - particle.flow_direction].has_been_updated = true 
-      return
 
-    }
-}
+		// move left
+		if is_in_bounds(x - 1, y) && world.cells[y][x - 1].type == .EMPTY {
+			// can move left so do so
+			world.cells[y][x] = Particle {
+				type  = .EMPTY,
+				color = rl.BLACK,
+			}
+			world.cells[y][x - 1] = particle
+			world.cells[y][x - 1].has_been_updated = true
+			return
+
+		}
+		if is_in_bounds(x + 1, y) && world.cells[y][x + 1].type == .EMPTY {
+			// can move right so do so
+			world.cells[y][x] = Particle {
+				type  = .EMPTY,
+				color = rl.BLACK,
+			}
+			world.cells[y][x + 1] = particle
+			world.cells[y][x + 1].has_been_updated = true
+			return
+
+		}
+		// move down if nothing is under it 
+		if is_in_bounds(x, y + 1) && world.cells[y + 1][x].type == .EMPTY {
+			world.cells[y][x] = Particle {
+				type  = .EMPTY,
+				color = rl.BLACK,
+			}
+			world.cells[y + 1][x] = particle
+			world.cells[y + 1][x].has_been_updated = true
+			return
+		}
+		// if sand is above it the sand should sink 
+		if is_in_bounds(x, y) && world.cells[y - 1][x].type == .SAND {
+			world.cells[y][x] = Particle {
+				type  = .SAND,
+				color = rl.BEIGE,
+			}
+			world.cells[y - 1][x] = particle
+			world.cells[y - 1][x].has_been_updated = true
+
+		}
+	}
 }
 
 draw_floor :: proc() {
