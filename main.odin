@@ -76,9 +76,11 @@ main :: proc() {
 		if rl.IsMouseButtonDown(.LEFT) {
 			switch selected_particle {
 			case 1:
-				place_particle(Particle{type = .SAND, color = rl.BEIGE})
+				r := rand.float32_range(150, 255)
+				place_particle(Particle{type = .SAND, color = rl.Color{211, 176, 131, u8(r)}})
 			case 2:
-				place_particle(Particle{type = .WATER, color = rl.BLUE})
+				r := rand.float32_range(150, 255)
+				place_particle(Particle{type = .WATER, color = rl.Color{0, 121, 241, u8(r)}})
 			}
 		}
 
@@ -114,8 +116,8 @@ place_particle :: proc(particle: Particle) {
 	if !is_in_bounds(x, y) do return
 
 	// place like 10 at a time in like a squareish circle 
-	for i: i32 = 0; i < 10; i += 1 {
-		for j: i32 = 0; j < 10; j += 1 {
+	for i: i32 = 0; i < 5; i += 1 {
+		for j: i32 = 0; j < 5; j += 1 {
 			if !is_in_bounds(x + i, y + j) do return
 			world.cells[y + j][x + i] = particle
 		}
@@ -125,30 +127,6 @@ place_particle :: proc(particle: Particle) {
 
 }
 
-place_sand :: proc() {
-	x, y := get_mouse_pos()
-	if !is_in_bounds(x, y) do return
-
-	particle := Particle {
-		type             = .SAND,
-		color            = rl.BEIGE,
-		has_been_updated = false,
-	}
-	world.cells[y][x] = particle
-}
-
-place_water :: proc() {
-	x, y := get_mouse_pos()
-	if !is_in_bounds(x, y) do return
-
-	particle := Particle {
-		type             = .WATER,
-		color            = rl.BLUE,
-		has_been_updated = false,
-		flow_direction   = rand.choice([]i32{-1, 1}),
-	}
-	world.cells[y][x] = particle
-}
 
 render_particles :: proc() {
 	for y in 0 ..< WORLD_HEIGHT {
