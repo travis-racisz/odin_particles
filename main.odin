@@ -61,7 +61,7 @@ main :: proc() {
 
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "particles")
 	for !rl.WindowShouldClose() {
-		rl.SetTargetFPS(144)
+		rl.SetTargetFPS(60)
 
 		rl.BeginDrawing();defer rl.EndDrawing()
 
@@ -116,6 +116,7 @@ place_particle :: proc(particle: Particle) {
 	// place like 10 at a time in like a squareish circle 
 	for i: i32 = 0; i < 10; i += 1 {
 		for j: i32 = 0; j < 10; j += 1 {
+			if !is_in_bounds(x + i, y + j) do return
 			world.cells[y + j][x + i] = particle
 		}
 
