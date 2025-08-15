@@ -14,7 +14,7 @@ WINDOW_HEIGHT :: WORLD_HEIGHT * GRID_SIZE
 FIRE_DISPERSION_CHANCE :: 5
 FIRE_LIFETIME :: 50
 LAVA_BURN_DELAY :: 12
-LAVA_SINK_RATE :: 25
+LAVA_SINK_RATE :: 5
 WOOD_FLAMMABILITY :: 25
 
 // Water physics constants
@@ -109,44 +109,57 @@ main :: proc() {
 			selected_particle = .STONE
 		}
 		if rl.IsMouseButtonDown(.LEFT) {
-			#partial switch selected_particle {
-			case .SAND:
-				place_particle(Particle{type = .SAND, color = Beige})
-			case .WATER:
-				place_particle(
-					Particle {
-						type  = .WATER,
-						color = Blue,
-						ra    = u8(rand.int31_max(256)),
-						rb    = u8(rand.int31_max(2)), // Random direction: 0 or 1
-					},
-				)
-			case .WOOD:
-				// ra here refers to flamability chance 
-				place_particle(Particle{type = .WOOD, color = Wood, ra = WOOD_FLAMMABILITY})
-			case .FIRE:
-				// ra is life time value, fire will last for 100 steps rb is the dispersion rate of the fire  
-				place_particle(
-					Particle {
-						type = .FIRE,
-						color = Fire,
-						ra = FIRE_LIFETIME,
-						rb = FIRE_DISPERSION_CHANCE,
-					},
-				)
-			case .LAVA:
-				place_particle(
-					Particle {
-						type = .LAVA,
-						color = Lava,
-						ra = LAVA_BURN_DELAY,
-						rb = LAVA_SINK_RATE,
-					},
-				)
-			case .STONE:
-				place_particle(Particle{type = .STONE, color = Stone})
-			}
+			// Check if mouse is over UI area before spawning particles
+			mouse_pos := rl.GetMousePosition()
+			ui_x := WINDOW_WIDTH - 150
+			ui_y := i32(10)
+			ui_width := i32(140) + 20 // button_width + padding
+			ui_height := 7 * (i32(40) + 5) + 10 // 7 buttons * (height + spacing) + padding
 
+			// Only spawn particles if mouse is NOT over the UI
+			if !(mouse_pos.x >= f32(ui_x - 10) &&
+				   mouse_pos.x <= f32(ui_x + ui_width) &&
+				   mouse_pos.y >= f32(ui_y - 10) &&
+				   mouse_pos.y <= f32(ui_y + ui_height)) {
+
+				#partial switch selected_particle {
+				case .SAND:
+					place_particle(Particle{type = .SAND, color = Beige})
+				case .WATER:
+					place_particle(
+						Particle {
+							type  = .WATER,
+							color = Blue,
+							ra    = u8(rand.int31_max(256)),
+							rb    = u8(rand.int31_max(2)), // Random direction: 0 or 1
+						},
+					)
+				case .WOOD:
+					// ra here refers to flamability chance 
+					place_particle(Particle{type = .WOOD, color = Wood, ra = WOOD_FLAMMABILITY})
+				case .FIRE:
+					// ra is life time value, fire will last for 100 steps rb is the dispersion rate of the fire  
+					place_particle(
+						Particle {
+							type = .FIRE,
+							color = Fire,
+							ra = FIRE_LIFETIME,
+							rb = FIRE_DISPERSION_CHANCE,
+						},
+					)
+				case .LAVA:
+					place_particle(
+						Particle {
+							type = .LAVA,
+							color = Lava,
+							ra = LAVA_BURN_DELAY,
+							rb = LAVA_SINK_RATE,
+						},
+					)
+				case .STONE:
+					place_particle(Particle{type = .STONE, color = Stone})
+				}
+			}
 		} else {
 			prev_mouse_x = -1
 			prev_mouse_y = -1
@@ -403,7 +416,7 @@ move_fire_particle :: proc(x, y: i32) {
 
 move_lava_particle :: proc(x, y: i32) {
 	particle := world.cells[y][x]
-	
+
 	if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .WATER {
 		// Convert lava to stone
 		world.cells[y][x].rb -= 1
@@ -420,7 +433,7 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y - 1][x].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 2) && world.cells[y - 2][x].type == .EMPTY {
 				world.cells[y - 2][x] = Particle {
@@ -432,7 +445,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check down
 	if is_in_bounds(x, y + 1) && world.cells[y + 1][x].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -442,13 +455,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y + 1][x] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y + 1][x].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -460,7 +473,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check left
 	if is_in_bounds(x - 1, y) && world.cells[y][x - 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -470,13 +483,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y][x - 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y][x - 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -488,7 +501,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check right
 	if is_in_bounds(x + 1, y) && world.cells[y][x + 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -498,13 +511,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y][x + 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y][x + 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -516,7 +529,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check up-left
 	if is_in_bounds(x - 1, y - 1) && world.cells[y - 1][x - 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -526,13 +539,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y - 1][x - 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y - 1][x - 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -544,7 +557,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check up-right
 	if is_in_bounds(x + 1, y - 1) && world.cells[y - 1][x + 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -554,13 +567,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y - 1][x + 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y - 1][x + 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -572,7 +585,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check down-left
 	if is_in_bounds(x - 1, y + 1) && world.cells[y + 1][x - 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -582,13 +595,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y + 1][x - 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y + 1][x - 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -600,7 +613,7 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	// Check down-right
 	if is_in_bounds(x + 1, y + 1) && world.cells[y + 1][x + 1].type == .WATER {
 		world.cells[y][x].rb -= 1
@@ -610,13 +623,13 @@ move_lava_particle :: proc(x, y: i32) {
 				color = Stone,
 			}
 			world.cells[y][x].has_been_updated = true
-			
+
 			world.cells[y + 1][x + 1] = Particle {
 				type  = .STONE,
 				color = Stone,
 			}
 			world.cells[y + 1][x + 1].has_been_updated = true
-			
+
 			// Spawn smoke above the stone
 			if is_in_bounds(x, y - 1) && world.cells[y - 1][x].type == .EMPTY {
 				world.cells[y - 1][x] = Particle {
@@ -628,17 +641,18 @@ move_lava_particle :: proc(x, y: i32) {
 			return
 		}
 	}
-	
+
 	if is_in_bounds(x, y) && world.cells[y + 1][x].type == .WOOD {
 		world.cells[y][x].ra -= 1
 		if world.cells[y][x].ra <= 0 {
-			world.cells[y][x].ra = LAVA_BURN_DELAY
+			// Create a new lava particle with reset burn delay
+			new_lava := particle
+			new_lava.ra = LAVA_BURN_DELAY
 
-			world.cells[y + 1][x] = particle
+			world.cells[y + 1][x] = new_lava
 			world.cells[y][x] = Particle {
 				type  = .EMPTY,
 				color = rl.BLACK,
-				ra    = LAVA_BURN_DELAY,
 			}
 			world.cells[y + 1][x].has_been_updated = true
 		}
@@ -647,7 +661,7 @@ move_lava_particle :: proc(x, y: i32) {
 
 move_sand_particle :: proc(x, y: i32) {
 	particle := world.cells[y][x]
-	
+
 	// Sand sinks through water
 	if is_in_bounds(x, y + 1) && world.cells[y + 1][x].type == .WATER {
 		water_particle := world.cells[y + 1][x]
@@ -657,7 +671,7 @@ move_sand_particle :: proc(x, y: i32) {
 		world.cells[y + 1][x].has_been_updated = true
 		return
 	}
-	
+
 	// Sand sinks through water diagonally
 	if is_in_bounds(x - 1, y + 1) && world.cells[y + 1][x - 1].type == .WATER {
 		water_particle := world.cells[y + 1][x - 1]
@@ -680,7 +694,7 @@ move_sand_particle :: proc(x, y: i32) {
 
 move_stone_particle :: proc(x, y: i32) {
 	particle := world.cells[y][x]
-	
+
 	// Stone sinks in water 
 	if is_in_bounds(x, y + 1) && world.cells[y + 1][x].type == .WATER {
 		water_particle := world.cells[y + 1][x]
