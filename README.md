@@ -1,6 +1,10 @@
 # Odin Particles
 
-A cellular automata-based falling sand game implemented in the Odin programming language using the Raylib graphics library. Inspired by games like Noita, this project simulates particle interactions, such as sand falling, liquids flowing, and other physics-based behaviors in a pixelated world.
+
+https://github.com/user-attachments/assets/5c366e03-9593-4522-9d95-93020b5aec39
+
+
+A cellular automata-based falling sand game implemented in the Odin programming language using the Raylib graphics library. This project simulates particle interactions, such as sand falling, liquids flowing, and other physics-based behaviors in a pixelated world.
 
 ## Description
 
@@ -53,9 +57,7 @@ The game window will open, displaying the simulation grid.
 ### Controls
 - **Left Mouse Button**: Place selected particle.
 - **Right Mouse Button**: Erase particles.
-- **Number Keys (1-9)**: Select different particle types (e.g., 1 for sand, 2 for water).
-- **Space**: Pause/resume simulation.
-- **R**: Reset the grid.
+- **Number Keys (1-5)**: Select different particle types (e.g., 1 for sand, 2 for water).
 - **Esc**: Quit the game.
 
 (Note: Controls may vary based on the exact implementation; check the source code for details.)
